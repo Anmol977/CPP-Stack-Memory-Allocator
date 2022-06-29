@@ -1,7 +1,9 @@
-#include <iostream>
+#include <chrono>
+#include <stdio.h>
 #include <cstdint>
 #include <cassert>
-#include <stdio.h>
+#include <iostream>
+
 
 #define ALIGNMENT	   8
 #define MAX_ALLOC_SIZE 10 * 1024 * 1024
@@ -30,7 +32,6 @@ private:
 								   alignment * (1 + (needed_space / alignment)) 
 								   : needed_space;
 		}
-		std::cout << "calculated padding : " << calculated_padding << "\n";
 		return calculated_padding;
 	}
 public:
@@ -55,7 +56,7 @@ public:
 
 		offset += bytes_to_allocate;
 
-		std::cout << "\t@C " << (void*)current_address << "\t@R " << (void*)next_address << "\tO " << offset << "\tP " << padding << std::endl;
+		//std::cout << "\t@C " << (void*)current_address << "\t@R " << (void*)next_address << "\tO " << offset << "\tP " << padding << std::endl;
 
 		return (void*)next_address;
 	}
@@ -75,19 +76,20 @@ public:
 
 };
 
-struct TestStruct {
-	int i;
-	char c;
-	int j;
-};
-
 int main() {
-	//current max pool limit 10MB
 	MemAllocator* stack_allocator = new MemAllocator();
-	std::cout << sizeof(AllocationHeader) << std::endl;
-	for (long i = 0; i < 1000; i++) {
-		TestStruct* test = new TestStruct;
-		test = (TestStruct*)stack_allocator->allocate_memory(sizeof(TestStruct));
+	auto start = std::chrono::steady_clock::now();
+	void* addresses[5000];
+	for (long i = 0; i < 5000; i++) {
+		addresses[i] = stack_allocator->allocate_memory(sizeof(i));
 	}
+	auto end = std::chrono::steady_clock::now();
+	std::cout << "Elapsed time in microseconds: "<< std::chrono::duration_cast<std::chrono::microseconds>(end - start).count()<< "\n";
+	start = std::chrono::steady_clock::now();
+	for (long i = 0; i < 5000; i++) {
+		addresses[i] = malloc(sizeof(i));
+	}
+	end = std::chrono::steady_clock::now();
+	std::cout << "Elapsed time in microseconds for malloc : " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << "\n";
 
 }
